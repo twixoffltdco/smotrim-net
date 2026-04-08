@@ -1,0 +1,27 @@
+{
+  "name": "Smotrim.net — ТВ онлайн",
+  "short_name": "Smotrim",
+  "description": "Смотрите телевидение онлайн бесплатно — прямые эфиры телеканалов",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#e63946",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "news"],
+  "screenshots": [],
+  "share_target": {
+    "action": "/search",
+    "method": "GET",
+    "params": {
+      "text": "q"
+    }
+  }
+}

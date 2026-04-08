@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smotrim.net — Смотреть ТВ онлайн бесплатно | Прямые эфиры каналов</title>
+  <meta name="description" content="Smotrim.net — смотрите российское и зарубежное телевидение онлайн бесплатно. Прямые эфиры более 50 телеканалов без регистрации. Россия 1, НТВ, СТС, ТНТ, МУЗ ТВ и другие.">
+  <meta name="keywords" content="смотреть тв онлайн, телевидение онлайн бесплатно, прямой эфир, российское тв онлайн, smotrim, стримлайв">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Smotrim.net">
+  <link rel="canonical" href="https://smotrim.net/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://smotrim.net/">
+  <meta property="og:title" content="Smotrim.net — Смотреть ТВ онлайн бесплатно">
+  <meta property="og:description" content="Прямые эфиры более 50 российских и зарубежных телеканалов бесплатно и без регистрации.">
+  <meta property="og:image" content="https://smotrim.net/og-image.jpg">
+  <meta property="og:locale" content="ru_RU">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Smotrim.net — ТВ онлайн">
+  <meta name="twitter:description" content="Прямые эфиры телеканалов бесплатно">
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Smotrim.net",
+    "url": "https://smotrim.net",
+    "description": "Онлайн телевидение — прямые эфиры российских и зарубежных телеканалов бесплатно",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://smotrim.net/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header" id="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo" aria-label="Smotrim.net — главная">
+      <span class="logo-icon">▶</span>
+      <span class="logo-text">smotrim<span class="logo-dot">.net</span></span>
+    </a>
+
+    <nav class="main-nav" id="main-nav">
+      <a href="/" class="nav-link active" data-filter="all">Все каналы</a>
+      <a href="/tv" class="nav-link" data-filter="tv">📺 ТВ</a>
+      <a href="/radio" class="nav-link" data-filter="radio">📻 Радио</a>
+      <a href="/iptv" class="nav-link" data-filter="iptv">🌐 IPTV</a>
+    </nav>
+
+    <div class="header-right">
+      <div class="search-wrap">
+        <input type="search" id="search-input" class="search-input" placeholder="Поиск канала..." autocomplete="off">
+        <button class="search-btn" aria-label="Поиск">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
+      <button class="burger-btn" id="burger-btn" aria-label="Меню">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO BANNER -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">Смотрите ТВ онлайн <span class="hero-accent">бесплатно</span></h1>
+    <p class="hero-subtitle">Прямые эфиры телеканалов и радиостанций без регистрации и рекламы</p>
+    <div class="hero-stats" id="hero-stats">
+      <div class="stat"><span class="stat-num" id="stat-tv">—</span><span class="stat-label">ТВ каналов</span></div>
+      <div class="stat"><span class="stat-num" id="stat-radio">—</span><span class="stat-label">Радиостанций</span></div>
+      <div class="stat"><span class="stat-num" id="stat-iptv">—</span><span class="stat-label">IPTV каналов</span></div>
+    </div>
+  </div>
+  <div class="hero-bg"></div>
+</section>
+
+<!-- FEATURED / LIVE NOW -->
+<section class="section live-section" id="live-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title"><span class="live-badge-inline">LIVE</span> Сейчас в эфире</h2>
+      <a href="#all-channels" class="see-all">Все каналы →</a>
+    </div>
+    <div class="featured-grid" id="featured-grid">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ALL CHANNELS -->
+<section class="section" id="all-channels">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title" id="channels-title">Все каналы</h2>
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="ftab active" data-source="all">Все</button>
+        <button class="ftab" data-source="streamlivetv">StreamLiveTV</button>
+        <button class="ftab" data-source="iptv">IPTV.org</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <p>Загружаем каналы...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-state hidden" id="error-state">
+      <p>⚠️ Не удалось загрузить каналы. <button onclick="loadChannels()">Повторить</button></p>
+    </div>
+
+    <!-- Channels grid -->
+    <div class="channels-grid" id="channels-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+</section>
+
+<!-- PLAYER MODAL -->
+<div class="player-overlay" id="player-overlay" role="dialog" aria-modal="true" aria-labelledby="player-title">
+  <div class="player-modal">
+    <div class="player-header">
+      <div class="player-title-wrap">
+        <span class="live-dot-animated"></span>
+        <h2 class="player-channel-name" id="player-title">Канал</h2>
+      </div>
+      <button class="player-close" id="player-close" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="player-body">
+      <div class="player-frame-wrap" id="player-frame-wrap">
+        <iframe id="player-iframe" src="" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" frameborder="0" title="Прямой эфир"></iframe>
+      </div>
+      <div class="player-info" id="player-info">
+        <p class="player-desc" id="player-desc"></p>
+        <div class="player-meta" id="player-meta"></div>
+        <a class="player-fullpage-btn" id="player-fullpage-btn" href="#" target="_blank">
+          ⛶ Открыть на полный экран
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IPTV section -->
+<section class="section iptv-section" id="iptv-channels-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🌐 IPTV.org — международные каналы</h2>
+      <span class="section-badge">Авто-обновление</span>
+    </div>
+    <div class="loading-state" id="iptv-loading">
+      <div class="spinner"></div><p>Загружаем IPTV...</p>
+    </div>
+    <div class="channels-grid" id="iptv-grid"></div>
+    <div class="pagination" id="iptv-pagination"></div>
+  </div>
+</section>
+
+<!-- ABOUT SEO SECTION -->
+<section class="about-section">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-icon">📺</div>
+        <h3>Бесплатное ТВ онлайн</h3>
+        <p>Смотрите прямые эфиры российских телеканалов — НТВ, Россия 1, СТС, ТНТ, МУЗ ТВ, МИР и десятки других без регистрации.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🔄</div>
+        <h3>Автообновление каналов</h3>
+        <p>Список каналов обновляется автоматически. Новые каналы появляются на сайте сразу после их добавления.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">📱</div>
+        <h3>Работает на всех устройствах</h3>
+        <p>Сайт адаптирован для компьютеров, планшетов и телефонов. Смотрите ТВ где угодно.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🌐</div>
+        <h3>Международные каналы IPTV</h3>
+        <p>Более 8000 каналов со всего мира через IPTV.org — Европа, Азия, США и СНГ.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="logo footer-logo">
+          <span class="logo-icon">▶</span>
+          <span class="logo-text">smotrim<span class="logo-dot">.net</span></span>
+        </a>
+        <p class="footer-tagline">Онлайн телевидение бесплатно</p>
+      </div>
+      <div class="footer-links">
+        <h4>Разделы</h4>
+        <a href="/">Все каналы</a>
+        <a href="/tv">ТВ каналы</a>
+        <a href="/radio">Радио</a>
+        <a href="/iptv">IPTV</a>
+      </div>
+      <div class="footer-links">
+        <h4>Информация</h4>
+        <a href="/about">О проекте</a>
+        <a href="/contacts">Контакты</a>
+        <a href="/sitemap.xml">Карта сайта</a>
+      </div>
+      <div class="footer-links">
+        <h4>Партнёры</h4>
+        <a href="https://stlivetv.tatnet.app" target="_blank" rel="noopener">StreamLiveTV</a>
+        <a href="https://iptv-org.github.io" target="_blank" rel="noopener">IPTV.org</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025–2026 Smotrim.net — Все права защищены. Сайт не хранит видеоконтент, трансляции предоставляются внешними сервисами.</p>
+      <p>Powered by StreamLiveTV API &amp; IPTV-org</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+</body>
+</html>
