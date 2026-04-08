@@ -19,7 +19,8 @@ smotrim-net/
 ├── js/
 │   └── app.js              ← Логика: API, плеер, пагинация, SEO
 └── pages/
-    └── watch.html          ← Страница канала (с SEO на каждый канал)
+    ├── watch.html          ← Страница канала (с SEO на каждый канал)
+    └── iptv-player.html    ← IPTV PlayerJS плеер для IPTV.org потоков
 ```
 
 ## 🚀 Деплой
@@ -92,7 +93,8 @@ CONFIG.refreshInterval: 5 * 60 * 1000
 
 - **StreamLiveTV**: `https://aqeleulwobgamdffkfri.supabase.co/functions/v1/public-channels`
 - **Embed**: `https://stlivetv.tatnet.app/embed/{id}`
-- **IPTV.org**: `https://iptv-org.github.io/api/streams.json`
+- **IPTV.org**: `https://iptv-org.github.io/api/streams.json` + `channels.json` (склейка метаданных)
+- **IPTV Player**: `/pages/iptv-player.html` (PlayerJS на базе OinkTechLtd/cdnplayerjs)
 
 ## 🔧 Кастомизация
 

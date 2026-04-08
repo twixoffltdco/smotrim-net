@@ -10,8 +10,11 @@ const CONFIG = {
   streamApiUrl: 'https://aqeleulwobgamdffkfri.supabase.co/functions/v1/public-channels',
   embedBase: 'https://stlivetv.tatnet.app/embed/',
   iptvApiBase: 'https://iptv-org.github.io/api',
+  iptvPlayerPage: '/pages/iptv-player.html',
   channelsPerPage: 24,
   refreshInterval: 5 * 60 * 1000, // 5 minutes
+  streamFetchPageSize: 100,
+  streamFetchMaxPages: 50,
   allowedOwners: ['oinktech', 'Twixoff', 'ТВКАНАЛЫ'],
   iptvStatTarget: 8000,
 };
@@ -21,7 +24,7 @@ const CONFIG = {
 // =============================================
 const state = {
   allChannels: [],       // StreamLiveTV filtered
-  iptvChannels: [],      // IPTV.org
+  iptvChannels: [],      // IPTV.org merged channels+streams
   currentPage: 1,
   iptvPage: 1,
   activeSource: 'all',   // all | streamlivetv | iptv
@@ -142,8 +145,8 @@ async function loadChannels(silent = false) {
     let page = 1;
     let totalPages = 1;
 
-    while (page <= totalPages && page <= 10) { // max 10 pages to prevent infinite loop
-      const res = await fetch(`${CONFIG.streamApiUrl}?page=${page}&limit=50`);
+    while (page <= totalPages && page <= CONFIG.streamFetchMaxPages) {
+      const res = await fetch(`${CONFIG.streamApiUrl}?page=${page}&limit=${CONFIG.streamFetchPageSize}`);
       const json = await res.json();
 
       if (json.data) {
@@ -182,44 +185,47 @@ async function loadIptvChannels(silent = false) {
   if (!silent && loadingEl) loadingEl.classList.remove('hidden');
 
   try {
-    // Get Russia channels from IPTV.org
-    const res = await fetch(`${CONFIG.iptvApiBase}/streams.json`);
-    const streams = await res.json();
+    const [streamsRes, channelsRes] = await Promise.all([
+      fetch(`${CONFIG.iptvApiBase}/streams.json`),
+      fetch(`${CONFIG.iptvApiBase}/channels.json`)
+    ]);
 
-    // Filter channels with working payload, deduplicate by stream URL + channel id
+    const streams = await streamsRes.json();
+    const channels = await channelsRes.json();
+    const channelMap = new Map(channels.map(ch => [ch.id, ch]));
+
     const seen = new Set();
     state.iptvChannels = streams
       .filter(s => s.channel && s.url)
+      .filter(s => /^https?:\/\//i.test(s.url))
       .filter(s => {
         const key = `${s.channel}__${s.url}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
+      })
+      .map(s => {
+        const meta = channelMap.get(s.channel) || {};
+        return {
+          channel: s.channel,
+          channel_name: meta.name || s.channel,
+          url: s.url,
+          logo: meta.logo || '',
+          country: meta.country || '',
+          categories: meta.categories || [],
+          languages: meta.languages || [],
+          website: meta.website || '',
+          isIptv: true
+        };
       });
 
   } catch (err) {
-    // Fallback: use channels.json
-    try {
-      const res = await fetch(`${CONFIG.iptvApiBase}/channels.json`);
-      const channels = await res.json();
-      state.iptvChannels = channels
-        .filter(c => c.country && ['RU','UA','BY','KZ'].includes(c.country))
-        .slice(0, 200)
-        .map(c => ({
-          channel: c.id,
-          channel_name: c.name,
-          url: c.website,
-          logo: c.logo,
-          country: c.country,
-          isIptv: true,
-          iptvData: c
-        }));
-    } catch (e) {
-      console.error('IPTV.org load error:', e);
-    }
+    console.error('IPTV.org load error:', err);
+    state.iptvChannels = [];
   }
 
   if (!silent && loadingEl) loadingEl.classList.add('hidden');
+  updateStats();
   renderIptvChannels();
 }
 
@@ -425,6 +431,7 @@ function buildIptvCard(ch) {
   const logo = ch.logo || ch.icon || '';
   const country = ch.country || '';
   const url = ch.url || '';
+  const categories = Array.isArray(ch.categories) ? ch.categories.slice(0, 2).join(', ') : '';
 
   return `
     <article class="channel-card"
@@ -442,6 +449,7 @@ function buildIptvCard(ch) {
       </div>
       <div class="channel-info">
         <h3 class="channel-name">${name}</h3>
+        ${categories ? `<p class="channel-desc">${categories}</p>` : ''}
         <div class="channel-footer">
           <span class="channel-owner" style="color:var(--iptv);">IPTV.org</span>
           <span class="play-icon">▶</span>
@@ -543,15 +551,18 @@ function openIptvChannel(name, url, logo) {
 
   if (!overlay || !iframe) return;
 
-  // For IPTV streams, use an HLS player embed or direct link
-  // Use player.iptv.org embed if available
-  const embedUrl = `https://player.iptv.org/?url=${encodeURIComponent(url)}`;
+  if (!url || !/^https?:\/\//i.test(url)) {
+    alert('Поток IPTV недоступен или имеет некорректный URL.');
+    return;
+  }
+
+  const embedUrl = `${CONFIG.iptvPlayerPage}?src=${encodeURIComponent(url)}&title=${encodeURIComponent(name)}`;
 
   iframe.src = embedUrl;
   if (titleEl) titleEl.textContent = name;
   if (descEl) descEl.textContent = 'IPTV.org — международный канал';
   if (metaEl) metaEl.innerHTML = `<span>🌐 IPTV.org</span><span>📡 Прямой эфир</span>`;
-  if (fullBtn) { fullBtn.href = url; }
+  if (fullBtn) { fullBtn.href = embedUrl; }
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';

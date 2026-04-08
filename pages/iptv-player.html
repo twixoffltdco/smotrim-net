@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPTV Player — Smotrim.net</title>
+  <style>
+    html,body{margin:0;height:100%;background:#000;font-family:Inter,system-ui,sans-serif;color:#fff}
+    #player{width:100%;height:100%}
+    .status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#ddd;padding:24px;text-align:center}
+    .hint{opacity:.75;font-size:14px}
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <div id="status" class="status">Подключаем плеер IPTV…</div>
+
+  <script src="https://cdn.jsdelivr.net/gh/OinkTechLtd/cdnplayerjs@main/playerjs.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get('src') || params.get('file') || params.get('stream') || '';
+    const title = params.get('title') || 'IPTV канал';
+    const status = document.getElementById('status');
+
+    function showMessage(msg, hint = '') {
+      status.innerHTML = `<strong>${msg}</strong>${hint ? `<div class="hint">${hint}</div>` : ''}`;
+      status.style.display = 'flex';
+    }
+
+    if (!src || !/^https?:\/\//i.test(src)) {
+      showMessage('Ошибка запуска канала', 'Нужен параметр ?src=https://...');
+    } else if (typeof Playerjs === 'undefined') {
+      showMessage('Плеер не загрузился', 'Проверьте доступ к cdn.jsdelivr.net');
+    } else {
+      try {
+        document.title = `${title} — IPTV Player`;
+        // Формат из README CDNPlayerJS: запуск через src/file/stream URL
+        new Playerjs({
+          id: 'player',
+          file: src,
+          poster: '',
+          title,
+          autoplay: 1
+        });
+        status.style.display = 'none';
+      } catch (e) {
+        console.error(e);
+        showMessage('Не удалось инициализировать плеер', 'Попробуйте открыть другой IPTV поток');
+      }
+    }
+  </script>
+</body>
+</html>

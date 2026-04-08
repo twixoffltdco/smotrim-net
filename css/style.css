@@ -3,15 +3,15 @@
    =================================== */
 
 :root {
-  --bg: #0a0c10;
-  --bg2: #111318;
-  --bg3: #181c24;
-  --surface: #1a1e28;
-  --surface2: #222736;
-  --border: rgba(255,255,255,0.08);
-  --accent: #e63946;
-  --accent2: #ff6b6b;
-  --accent-glow: rgba(230,57,70,0.25);
+  --bg: #0f1117;
+  --bg2: #131722;
+  --bg3: #1a1f2d;
+  --surface: #1f2533;
+  --surface2: #2a3246;
+  --border: rgba(255,255,255,0.1);
+  --accent: #ff2d55;
+  --accent2: #ff4b6f;
+  --accent-glow: rgba(255,45,85,0.3);
   --text: #f0f2f8;
   --text2: #9aa3b8;
   --text3: #5c6480;
@@ -186,7 +186,9 @@ body {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(230,57,70,0.15) 0%, transparent 70%);
+  background:
+    radial-gradient(ellipse 65% 45% at 50% 0%, rgba(255,45,85,0.24) 0%, transparent 70%),
+    radial-gradient(circle at 20% 20%, rgba(88,101,242,0.22) 0%, transparent 30%);
   pointer-events: none;
 }
 
@@ -905,3 +907,15 @@ body {
 
 /* ===== SELECTION ===== */
 ::selection { background: rgba(230,57,70,0.3); color: var(--text); }
+
+
+.channel-card {
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.channel-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 32px rgba(0,0,0,.34), 0 0 0 1px var(--accent-glow);
+}
+.player-modal {
+  border: 1px solid var(--border);
+}
