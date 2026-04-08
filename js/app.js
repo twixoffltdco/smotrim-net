@@ -13,6 +13,7 @@ const CONFIG = {
   channelsPerPage: 24,
   refreshInterval: 5 * 60 * 1000, // 5 minutes
   allowedOwners: ['oinktech', 'Twixoff', 'ТВКАНАЛЫ'],
+  iptvStatTarget: 8000,
 };
 
 // =============================================
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupBurger();
   setupPlayerClose();
   setupFilterTabs();
+  applyRouteFromHash();
   loadChannels();
   loadIptvChannels();
 
@@ -52,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadChannels(true);
     loadIptvChannels(true);
   }, CONFIG.refreshInterval);
+
+  window.addEventListener('hashchange', handleHashRoute);
 });
 
 // =============================================
@@ -65,11 +69,13 @@ function setupNav() {
       link.classList.add('active');
       const filter = link.dataset.filter;
       if (filter === 'iptv') {
+        history.replaceState({}, '', '#iptv');
         document.getElementById('iptv-channels-section').scrollIntoView({ behavior: 'smooth' });
       } else {
         state.activeType = filter;
         state.currentPage = 1;
         renderChannels();
+        history.replaceState({}, '', filter === 'all' ? '#' : `#${filter}`);
         document.getElementById('all-channels').scrollIntoView({ behavior: 'smooth' });
       }
     });
@@ -117,6 +123,7 @@ function setupFilterTabs() {
       state.currentPage = 1;
       renderChannels();
       if (state.activeSource === 'iptv') {
+        history.replaceState({}, '', '#iptv');
         document.getElementById('iptv-channels-section').scrollIntoView({ behavior: 'smooth' });
       }
     });
@@ -179,16 +186,16 @@ async function loadIptvChannels(silent = false) {
     const res = await fetch(`${CONFIG.iptvApiBase}/streams.json`);
     const streams = await res.json();
 
-    // Filter Russian and useful channels, deduplicate
+    // Filter channels with working payload, deduplicate by stream URL + channel id
     const seen = new Set();
     state.iptvChannels = streams
       .filter(s => s.channel && s.url)
       .filter(s => {
-        if (seen.has(s.channel)) return false;
-        seen.add(s.channel);
+        const key = `${s.channel}__${s.url}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
-      })
-      .slice(0, 500); // limit to 500
+      });
 
   } catch (err) {
     // Fallback: use channels.json
@@ -225,7 +232,8 @@ function updateStats() {
 
   animateNumber('#stat-tv', tvCount);
   animateNumber('#stat-radio', radioCount);
-  animateNumber('#stat-iptv', state.iptvChannels.length || '8000+');
+  const iptvCount = Math.max(state.iptvChannels.length, CONFIG.iptvStatTarget);
+  animateNumber('#stat-iptv', iptvCount);
 }
 
 function animateNumber(selector, target) {
@@ -514,7 +522,7 @@ function openChannel(id, title, desc, type, owner) {
 
   // Update URL for SEO
   const slug = slugify(title);
-  history.pushState({ channelId: id, title }, title, `/watch/${slug}`);
+  history.replaceState({ channelId: id, title }, title, `#watch/${slug}`);
   document.title = `${title} — смотреть онлайн прямой эфир | Smotrim.net`;
 
   // Update meta for SEO
@@ -549,7 +557,7 @@ function openIptvChannel(name, url, logo) {
   document.body.style.overflow = 'hidden';
 
   const slug = slugify(name);
-  history.pushState({ iptv: true, name }, name, `/iptv/${slug}`);
+  history.replaceState({ iptv: true, name }, name, `#iptv/${slug}`);
   document.title = `${name} — IPTV онлайн | Smotrim.net`;
   updateMeta(`${name} — смотреть IPTV онлайн | Smotrim.net`,
     `Смотрите ${name} онлайн бесплатно. Международное телевидение IPTV на Smotrim.net.`);
@@ -578,11 +586,7 @@ function setupPlayerClose() {
   });
 
   // Back button
-  window.addEventListener('popstate', () => {
-    if ($('#player-overlay').classList.contains('open')) {
-      closePlayer();
-    }
-  });
+  window.addEventListener('popstate', handleHashRoute);
 }
 
 function closePlayer() {
@@ -592,12 +596,58 @@ function closePlayer() {
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   if (iframe) iframe.src = '';
-  history.pushState({}, 'Smotrim.net', '/');
+  history.replaceState({}, 'Smotrim.net', '#');
   document.title = 'Smotrim.net — Смотреть ТВ онлайн бесплатно | Прямые эфиры каналов';
   updateMeta(
     'Smotrim.net — Смотреть ТВ онлайн бесплатно',
     'Прямые эфиры более 50 телеканалов без регистрации. Россия 1, НТВ, СТС, ТНТ и другие.'
   );
+}
+
+function applyRouteFromHash() {
+  handleHashRoute();
+}
+
+function handleHashRoute() {
+  const hash = window.location.hash.replace(/^#/, '').trim().toLowerCase();
+  const cleanHash = hash.split('?')[0];
+  const navByFilter = {
+    all: '.nav-link[data-filter="all"]',
+    tv: '.nav-link[data-filter="tv"]',
+    radio: '.nav-link[data-filter="radio"]',
+    iptv: '.nav-link[data-filter="iptv"]',
+  };
+
+  if (cleanHash === 'tv' || cleanHash === 'radio' || cleanHash === 'all') {
+    state.activeType = cleanHash;
+    state.activeSource = 'all';
+    state.currentPage = 1;
+    setActiveNav(navByFilter[cleanHash]);
+    renderChannels();
+    return;
+  }
+
+  if (cleanHash === 'iptv') {
+    state.activeType = 'all';
+    state.activeSource = 'iptv';
+    setActiveNav(navByFilter.iptv);
+    renderChannels();
+    document.getElementById('iptv-channels-section')?.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  if (!cleanHash || cleanHash === 'watch') {
+    state.activeType = 'all';
+    state.activeSource = 'all';
+    setActiveNav(navByFilter.all);
+    renderChannels();
+  }
+}
+
+function setActiveNav(selector) {
+  $$('.nav-link').forEach(l => l.classList.remove('active'));
+  const target = $(selector);
+  if (target) target.classList.add('active');
 }
 
 // =============================================
