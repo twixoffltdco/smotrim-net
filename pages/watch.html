@@ -6,14 +6,14 @@
   <title id="page-title">Канал — Smotrim.net</title>
   <meta name="description" id="page-desc" content="Смотрите телеканал онлайн бесплатно на Smotrim.net. Прямой эфир без регистрации.">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" id="canonical-link" href="https://smotrim.net/">
+  <link rel="canonical" id="canonical-link" href="/">
 
   <!-- Open Graph -->
   <meta property="og:type" content="video.other">
-  <meta property="og:url" id="og-url" content="https://smotrim.net/">
+  <meta property="og:url" id="og-url" content="/">
   <meta property="og:title" id="og-title" content="Смотреть онлайн — Smotrim.net">
   <meta property="og:description" id="og-desc" content="Прямой эфир бесплатно">
-  <meta property="og:image" id="og-image" content="https://smotrim.net/og-image.jpg">
+  <meta property="og:image" id="og-image" content="/og-image.jpg">
   <meta property="og:locale" content="ru_RU">
   <meta property="og:site_name" content="Smotrim.net">
 
@@ -267,7 +267,7 @@ async function loadChannel() {
   document.getElementById('og-desc').content = desc;
   document.getElementById('tw-title').content = title;
   document.getElementById('tw-desc').content = desc;
-  const watchPath = `https://smotrim.net/pages/watch.html?channel_id=${encodeURIComponent(channel.id)}&channel=${encodeURIComponent(slugify(channel.title))}`;
+  const watchPath = `${window.location.origin}/watch/${encodeURIComponent(slugify(channel.title))}`;
   document.getElementById('canonical-link').href = watchPath;
   document.getElementById('og-url').content = watchPath;
   if (channel.thumbnail_url) document.getElementById('og-image').content = channel.thumbnail_url;
@@ -305,7 +305,7 @@ async function loadChannel() {
   // Sidebar
   const others = allowed.filter(c => c.id !== channel.id && c.channel_type === 'tv').slice(0, 20);
   document.getElementById('sidebar-channels').innerHTML = others.map(c => `
-    <a class="sidebar-ch-item" href="/pages/watch.html?channel_id=${encodeURIComponent(c.id)}&channel=${encodeURIComponent(slugify(c.title))}" title="${c.title} — смотреть онлайн">
+    <a class="sidebar-ch-item" href="/watch/${encodeURIComponent(slugify(c.title))}" title="${c.title} — смотреть онлайн">
       <div class="sidebar-ch-thumb">
         ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">` : '📺'}
       </div>

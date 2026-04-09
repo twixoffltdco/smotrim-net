@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupBurger();
   setupPlayerClose();
   setupFilterTabs();
-  applyRouteFromHash();
+  applyRouteFromLocation();
   loadChannels();
   loadIptvChannels();
 
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadIptvChannels(true);
   }, CONFIG.refreshInterval);
 
-  window.addEventListener('hashchange', handleHashRoute);
+  window.addEventListener('popstate', handleRoute);
 });
 
 // =============================================
@@ -73,13 +73,13 @@ function setupNav() {
       link.classList.add('active');
       const filter = link.dataset.filter;
       if (filter === 'iptv') {
-        history.replaceState({}, '', '#iptv');
+        history.replaceState({}, '', '/iptv');
         document.getElementById('iptv-channels-section').scrollIntoView({ behavior: 'smooth' });
       } else {
         state.activeType = filter;
         state.currentPage = 1;
         renderChannels();
-        history.replaceState({}, '', filter === 'all' ? '#' : `#${filter}`);
+        history.replaceState({}, '', filter === 'all' ? '/' : `/${filter}`);
         document.getElementById('all-channels').scrollIntoView({ behavior: 'smooth' });
       }
     });
@@ -127,7 +127,7 @@ function setupFilterTabs() {
       state.currentPage = 1;
       renderChannels();
       if (state.activeSource === 'iptv') {
-        history.replaceState({}, '', '#iptv');
+        history.replaceState({}, '', '/iptv');
         document.getElementById('iptv-channels-section').scrollIntoView({ behavior: 'smooth' });
       }
     });
@@ -503,10 +503,8 @@ function getPagesRange(current, total) {
 }
 
 function buildWatchPageUrl({ id = '', title = '' } = {}) {
-  const params = new URLSearchParams();
-  if (id) params.set('channel_id', id);
-  if (title) params.set('channel', slugify(title));
-  return `/pages/watch.html?${params.toString()}`;
+  const slug = title ? slugify(title) : id;
+  return `/watch/${encodeURIComponent(slug || id)}`;
 }
 
 // =============================================
@@ -540,7 +538,7 @@ function openChannel(id, title, desc, type, owner) {
 
   // Update URL for SEO
   const slug = slugify(title);
-  history.replaceState({ channelId: id, title }, title, `#watch/${slug}`);
+  history.replaceState({ channelId: id, title }, title, `/watch/${slug}`);
   document.title = `${title} — смотреть онлайн прямой эфир | Smotrim.net`;
 
   // Update meta for SEO
@@ -578,7 +576,7 @@ function openIptvChannel(name, url, logo) {
   document.body.style.overflow = 'hidden';
 
   const slug = slugify(name);
-  history.replaceState({ iptv: true, name }, name, `#iptv/${slug}`);
+  history.replaceState({ iptv: true, name }, name, `/iptv/${slug}`);
   document.title = `${name} — IPTV онлайн | Smotrim.net`;
   updateMeta(`${name} — смотреть IPTV онлайн | Smotrim.net`,
     `Смотрите ${name} онлайн бесплатно. Международное телевидение IPTV на Smotrim.net.`);
@@ -607,7 +605,7 @@ function setupPlayerClose() {
   });
 
   // Back button
-  window.addEventListener('popstate', handleHashRoute);
+  window.addEventListener('popstate', handleRoute);
 }
 
 function closePlayer() {
@@ -617,7 +615,7 @@ function closePlayer() {
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   if (iframe) iframe.src = '';
-  history.replaceState({}, 'Smotrim.net', '#');
+  history.replaceState({}, 'Smotrim.net', getFilterPath());
   document.title = 'Smotrim.net — Смотреть ТВ онлайн бесплатно | Прямые эфиры каналов';
   updateMeta(
     'Smotrim.net — Смотреть ТВ онлайн бесплатно',
@@ -625,8 +623,8 @@ function closePlayer() {
   );
 }
 
-function applyRouteFromHash() {
-  handleHashRoute();
+function applyRouteFromLocation() {
+  handleRoute();
 }
 
 function openStreamChannelBySlug(slug) {
@@ -670,7 +668,8 @@ function tryApplyPendingHashRoute() {
   }
 }
 
-function handleHashRoute() {
+function handleRoute() {
+  const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
   const hash = window.location.hash.replace(/^#/, '').trim().toLowerCase();
   const cleanHash = hash.split('?')[0];
   const navByFilter = {
@@ -680,16 +679,19 @@ function handleHashRoute() {
     iptv: '.nav-link[data-filter="iptv"]',
   };
 
-  if (cleanHash === 'tv' || cleanHash === 'radio' || cleanHash === 'all') {
-    state.activeType = cleanHash;
+  if (path === '/tv' || path === '/radio' || path === '/all' || cleanHash === 'tv' || cleanHash === 'radio' || cleanHash === 'all') {
+    const activeType = (path === '/tv' || cleanHash === 'tv')
+      ? 'tv'
+      : ((path === '/radio' || cleanHash === 'radio') ? 'radio' : 'all');
+    state.activeType = activeType;
     state.activeSource = 'all';
     state.currentPage = 1;
-    setActiveNav(navByFilter[cleanHash]);
+    setActiveNav(navByFilter[activeType]);
     renderChannels();
     return;
   }
 
-  if (cleanHash === 'iptv') {
+  if (path === '/iptv' || cleanHash === 'iptv') {
     state.activeType = 'all';
     state.activeSource = 'iptv';
     setActiveNav(navByFilter.iptv);
@@ -698,8 +700,10 @@ function handleHashRoute() {
     return;
   }
 
-  if (cleanHash.startsWith('watch/')) {
-    const slug = cleanHash.replace(/^watch\//, '').trim();
+  if (path.startsWith('/watch/') || cleanHash.startsWith('watch/')) {
+    const slug = path.startsWith('/watch/')
+      ? path.replace(/^\/watch\//, '').trim()
+      : cleanHash.replace(/^watch\//, '').trim();
     state.activeType = 'all';
     state.activeSource = 'all';
     setActiveNav(navByFilter.all);
@@ -712,8 +716,10 @@ function handleHashRoute() {
     return;
   }
 
-  if (cleanHash.startsWith('iptv/')) {
-    const slug = cleanHash.replace(/^iptv\//, '').trim();
+  if (path.startsWith('/iptv/') || cleanHash.startsWith('iptv/')) {
+    const slug = path.startsWith('/iptv/')
+      ? path.replace(/^\/iptv\//, '').trim()
+      : cleanHash.replace(/^iptv\//, '').trim();
     state.activeType = 'all';
     state.activeSource = 'iptv';
     setActiveNav(navByFilter.iptv);
@@ -726,13 +732,20 @@ function handleHashRoute() {
     return;
   }
 
-  if (!cleanHash || cleanHash === 'watch') {
+  if (path === '/' || !cleanHash || cleanHash === 'watch') {
     state.activeType = 'all';
     state.activeSource = 'all';
     state.pendingHashRoute = null;
     setActiveNav(navByFilter.all);
     renderChannels();
   }
+}
+
+function getFilterPath() {
+  if (state.activeSource === 'iptv') return '/iptv';
+  if (state.activeType === 'tv') return '/tv';
+  if (state.activeType === 'radio') return '/radio';
+  return '/';
 }
 
 function setActiveNav(selector) {

@@ -25,6 +25,15 @@ smotrim-net/
 
 ## 🚀 Деплой
 
+### Авто-подстановка домена для SEO файлов
+Чтобы `robots.txt`, `sitemap.xml` и `sitemap-main.xml` автоматически подхватывали новый домен без ручной правки, запускайте генератор перед деплоем:
+
+```bash
+SITE_ORIGIN="https://ваш-домен.tld" node scripts/generate-seo-files.mjs
+```
+
+Если `SITE_ORIGIN` не передан, скрипт пытается взять домен из переменных `URL`, `DEPLOY_PRIME_URL`, `VERCEL_URL`.
+
 ### На хостинг с Apache (.htaccess поддержка):
 1. Загрузите все файлы на хостинг через FTP/SFTP или панель управления
 2. Убедитесь что `mod_rewrite` включён в Apache

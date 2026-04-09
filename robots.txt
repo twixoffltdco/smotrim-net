@@ -21,6 +21,4 @@ User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
-Sitemap: https://smotrim.net/sitemap.xml
-Sitemap: https://smotrim.net/sitemap-channels.xml
-Sitemap: https://smotrim.net/sitemap-iptv.xml
+Sitemap: https://smotrim.tatnet.app/sitemap.xml
