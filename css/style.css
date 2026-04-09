@@ -3,24 +3,24 @@
    =================================== */
 
 :root {
-  --bg: #0f1117;
-  --bg2: #131722;
-  --bg3: #1a1f2d;
-  --surface: #1f2533;
-  --surface2: #2a3246;
-  --border: rgba(255,255,255,0.1);
-  --accent: #ff2d55;
-  --accent2: #ff4b6f;
-  --accent-glow: rgba(255,45,85,0.3);
-  --text: #f0f2f8;
-  --text2: #9aa3b8;
-  --text3: #5c6480;
-  --live: #22c55e;
-  --radio: #3b82f6;
-  --iptv: #a855f7;
+  --bg: #f3f5f9;
+  --bg2: #ffffff;
+  --bg3: #eef2f8;
+  --surface: #ffffff;
+  --surface2: #f8faff;
+  --border: #d9dfeb;
+  --accent: #0f69ff;
+  --accent2: #2e7dff;
+  --accent-glow: rgba(15,105,255,0.24);
+  --text: #101828;
+  --text2: #344054;
+  --text3: #667085;
+  --live: #16a34a;
+  --radio: #2563eb;
+  --iptv: #7c3aed;
   --radius: 12px;
   --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow: 0 10px 30px rgba(16,24,40,0.08);
   --transition: 0.2s ease;
   --font-head: 'Montserrat', sans-serif;
   --font-body: 'Inter', sans-serif;
@@ -46,7 +46,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10,12,16,0.92);
+  background: rgba(255,255,255,0.96);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
@@ -108,8 +108,8 @@ body {
 }
 
 .nav-link:hover, .nav-link.active {
-  color: var(--text);
-  background: var(--surface);
+  color: var(--accent);
+  background: #eaf1ff;
 }
 
 .header-right {
@@ -187,8 +187,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 65% 45% at 50% 0%, rgba(255,45,85,0.24) 0%, transparent 70%),
-    radial-gradient(circle at 20% 20%, rgba(88,101,242,0.22) 0%, transparent 30%);
+    radial-gradient(ellipse 65% 45% at 50% 0%, rgba(15,105,255,0.16) 0%, transparent 72%),
+    radial-gradient(circle at 20% 20%, rgba(15,105,255,0.08) 0%, transparent 34%);
   pointer-events: none;
 }
 
@@ -234,7 +234,7 @@ body {
 
 /* ===== SECTIONS ===== */
 .section { padding: 48px 0; }
-.iptv-section { background: var(--bg2); }
+.iptv-section { background: #eef3ff; }
 
 .section-header {
   display: flex;
