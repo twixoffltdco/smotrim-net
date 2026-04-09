@@ -31,6 +31,7 @@ const state = {
   activeType: 'all',     // all | tv | radio
   searchQuery: '',
   isLoading: false,
+  pendingHashRoute: null,
 };
 
 // =============================================
@@ -168,6 +169,7 @@ async function loadChannels(silent = false) {
     updateStats();
     renderFeatured();
     renderChannels();
+    tryApplyPendingHashRoute();
     showLoading(false);
 
   } catch (err) {
@@ -227,6 +229,7 @@ async function loadIptvChannels(silent = false) {
   if (!silent && loadingEl) loadingEl.classList.add('hidden');
   updateStats();
   renderIptvChannels();
+  tryApplyPendingHashRoute();
 }
 
 // =============================================
@@ -626,6 +629,47 @@ function applyRouteFromHash() {
   handleHashRoute();
 }
 
+function openStreamChannelBySlug(slug) {
+  if (!slug || !state.allChannels.length) return false;
+  const channel = state.allChannels.find(ch => slugify(ch.title) === slug || ch.id === slug);
+  if (!channel) return false;
+  openChannel(
+    channel.id,
+    channel.title,
+    channel.description || '',
+    channel.channel_type || 'tv',
+    channel.owner?.username || ''
+  );
+  return true;
+}
+
+function openIptvChannelBySlug(slug) {
+  if (!slug || !state.iptvChannels.length) return false;
+  const channel = state.iptvChannels.find(ch => {
+    const name = ch.channel_name || ch.channel || '';
+    return slugify(name) === slug;
+  });
+  if (!channel) return false;
+  openIptvChannel(
+    channel.channel_name || channel.channel || '',
+    channel.url || '',
+    channel.logo || ''
+  );
+  return true;
+}
+
+function tryApplyPendingHashRoute() {
+  if (!state.pendingHashRoute) return;
+  const route = state.pendingHashRoute;
+  if (route.type === 'watch' && openStreamChannelBySlug(route.slug)) {
+    state.pendingHashRoute = null;
+    return;
+  }
+  if (route.type === 'iptv' && openIptvChannelBySlug(route.slug)) {
+    state.pendingHashRoute = null;
+  }
+}
+
 function handleHashRoute() {
   const hash = window.location.hash.replace(/^#/, '').trim().toLowerCase();
   const cleanHash = hash.split('?')[0];
@@ -654,9 +698,38 @@ function handleHashRoute() {
     return;
   }
 
+  if (cleanHash.startsWith('watch/')) {
+    const slug = cleanHash.replace(/^watch\//, '').trim();
+    state.activeType = 'all';
+    state.activeSource = 'all';
+    setActiveNav(navByFilter.all);
+    renderChannels();
+    if (!openStreamChannelBySlug(slug)) {
+      state.pendingHashRoute = { type: 'watch', slug };
+    } else {
+      state.pendingHashRoute = null;
+    }
+    return;
+  }
+
+  if (cleanHash.startsWith('iptv/')) {
+    const slug = cleanHash.replace(/^iptv\//, '').trim();
+    state.activeType = 'all';
+    state.activeSource = 'iptv';
+    setActiveNav(navByFilter.iptv);
+    renderChannels();
+    if (!openIptvChannelBySlug(slug)) {
+      state.pendingHashRoute = { type: 'iptv', slug };
+    } else {
+      state.pendingHashRoute = null;
+    }
+    return;
+  }
+
   if (!cleanHash || cleanHash === 'watch') {
     state.activeType = 'all';
     state.activeSource = 'all';
+    state.pendingHashRoute = null;
     setActiveNav(navByFilter.all);
     renderChannels();
   }
