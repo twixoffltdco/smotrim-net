@@ -9,6 +9,7 @@
 const CONFIG = {
   streamApiUrl: 'https://aqeleulwobgamdffkfri.supabase.co/functions/v1/public-channels',
   embedBase: 'https://stlivetv.tatnet.app/embed/',
+  embessBase: 'https://embesslivestudio.lovable.app/player?channel=',
   iptvApiBase: 'https://iptv-org.github.io/api',
   iptvPlayerPage: '/pages/iptv-player.html',
   channelsPerPage: 24,
@@ -32,6 +33,7 @@ const state = {
   searchQuery: '',
   isLoading: false,
   pendingHashRoute: null,
+  activePlayerSource: 'streamlivetv',
 };
 
 // =============================================
@@ -48,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupBurger();
   setupPlayerClose();
+  setupPlayerSourceSwitcher();
   setupFilterTabs();
   applyRouteFromLocation();
   loadChannels();
@@ -535,8 +538,8 @@ function openChannel(id, title, desc, type, owner) {
 
   if (!overlay || !iframe) return;
 
-  const embedUrl = `${CONFIG.embedBase}${id}`;
-  const watchUrl = buildWatchPageUrl({ id, title });
+  const embedUrl = getStreamEmbedUrl(id);
+  const watchUrl = `${buildWatchPageUrl({ id, title })}?source=${encodeURIComponent(state.activePlayerSource)}`;
 
   iframe.src = embedUrl;
   if (titleEl) titleEl.textContent = title;
@@ -623,6 +626,47 @@ function setupPlayerClose() {
   window.addEventListener('popstate', handleRoute);
 }
 
+function setupPlayerSourceSwitcher() {
+  const switcher = $('#player-source-switcher');
+  if (!switcher) return;
+
+  switcher.innerHTML = `
+    <button class="player-source-btn active" type="button" data-source="streamlivetv">StreamLiveTV</button>
+    <button class="player-source-btn" type="button" data-source="embess">EmbessLiveStudio</button>
+  `;
+
+  switcher.querySelectorAll('.player-source-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const source = btn.dataset.source;
+      state.activePlayerSource = source;
+      switcher.querySelectorAll('.player-source-btn')
+        .forEach(item => item.classList.toggle('active', item.dataset.source === source));
+
+      const overlay = $('#player-overlay');
+      const iframe = $('#player-iframe');
+      if (!overlay || !iframe || !overlay.classList.contains('open')) return;
+
+      const historyState = window.history.state || {};
+      if (!historyState.channelId) return;
+      iframe.src = getStreamEmbedUrl(historyState.channelId);
+
+      const fullBtn = $('#player-fullpage-btn');
+      if (fullBtn) {
+        fullBtn.href = `${buildWatchPageUrl({ id: historyState.channelId, title: historyState.title || '' })}?source=${encodeURIComponent(state.activePlayerSource)}`;
+      }
+    });
+  });
+  syncPlayerSourceSwitcher();
+}
+
+function getStreamEmbedUrl(channelId) {
+  if (!channelId) return '';
+  if (state.activePlayerSource === 'embess') {
+    return `${CONFIG.embessBase}${encodeURIComponent(channelId)}`;
+  }
+  return `${CONFIG.embedBase}${channelId}`;
+}
+
 function closePlayer() {
   const overlay = $('#player-overlay');
   const iframe = $('#player-iframe');
@@ -689,6 +733,12 @@ function tryApplyPendingHashRoute() {
 }
 
 function handleRoute() {
+  const sourceParam = (new URLSearchParams(window.location.search).get('source') || '').toLowerCase();
+  if (sourceParam === 'streamlivetv' || sourceParam === 'embess') {
+    state.activePlayerSource = sourceParam;
+    syncPlayerSourceSwitcher();
+  }
+
   const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
   const hash = window.location.hash.replace(/^#/, '').trim().toLowerCase();
   const cleanHash = hash.split('?')[0];
@@ -724,6 +774,7 @@ function handleRoute() {
     const slug = normalizeSlug(path.startsWith('/watch/')
       ? path.replace(/^\/watch\//, '').trim()
       : cleanHash.replace(/^watch\//, '').trim());
+    applyWatchSeoFallback(slug);
     state.activeType = 'all';
     state.activeSource = 'all';
     setActiveNav(navByFilter.all);
@@ -759,6 +810,22 @@ function handleRoute() {
     setActiveNav(navByFilter.all);
     renderChannels();
   }
+}
+
+function syncPlayerSourceSwitcher() {
+  const switcher = $('#player-source-switcher');
+  if (!switcher) return;
+  switcher.querySelectorAll('.player-source-btn')
+    .forEach(item => item.classList.toggle('active', item.dataset.source === state.activePlayerSource));
+}
+
+function applyWatchSeoFallback(slug) {
+  if (!slug) return;
+  const channelName = slug.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const normalizedName = channelName || 'Телеканал';
+  const title = `${normalizedName} — смотреть онлайн прямой эфир | Smotrim.net`;
+  const description = `Смотрите ${normalizedName} онлайн бесплатно на Smotrim.net. Прямой эфир без регистрации.`;
+  updateMeta(title, description);
 }
 
 function getFilterPath() {
