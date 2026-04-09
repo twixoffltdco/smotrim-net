@@ -195,10 +195,18 @@ function slugify(str) {
 }
 
 function normalizeSlug(value) {
-  return decodeURIComponent((value || '').toString().trim().toLowerCase())
+  return safeDecodeURIComponent((value || '').toString().trim().toLowerCase())
     .replace(/[^a-z0-9а-яё]+/gi, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function safeDecodeURIComponent(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (_) {
+    return value;
+  }
 }
 
 function slugsMatch(a, b) {
@@ -241,6 +249,34 @@ function getRequestedChannel() {
   }
 
   return { channelId: '', slug: '' };
+}
+
+function humanizeSlug(slug) {
+  const normalized = normalizeSlug(slug);
+  if (!normalized) return 'Телеканал';
+  return normalized
+    .split('-')
+    .filter(Boolean)
+    .map(word => word.length <= 2 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function applyFallbackSeo(slug) {
+  const channelLabel = humanizeSlug(slug);
+  const title = `${channelLabel} — смотреть онлайн прямой эфир | Smotrim.net`;
+  const desc = `Смотрите ${channelLabel} онлайн бесплатно на Smotrim.net. Прямой эфир ТВ-канала без регистрации.`;
+  const watchPath = `${window.location.origin}/watch/${encodeURIComponent(normalizeSlug(slug))}`;
+
+  document.getElementById('page-title').textContent = title;
+  document.title = title;
+  document.getElementById('page-desc').content = desc;
+  document.getElementById('og-title').content = title;
+  document.getElementById('og-desc').content = desc;
+  document.getElementById('tw-title').content = title;
+  document.getElementById('tw-desc').content = desc;
+  document.getElementById('canonical-link').href = watchPath;
+  document.getElementById('og-url').content = watchPath;
+  document.getElementById('breadcrumb-name').textContent = channelLabel;
 }
 
 function setError(message) {
@@ -347,6 +383,7 @@ function renderSidebar() {
 
 async function loadChannels() {
   const request = getRequestedChannel();
+  applyFallbackSeo(request.slug || request.channelId || '');
   let channels = [];
   let page = 1;
   let totalPages = 1;
@@ -364,11 +401,21 @@ async function loadChannels() {
   state.channels = allowed;
 
   const normalizedSlug = normalizeSlug(request.slug);
+  const slugAliases = {
+    'telekanal-twixoff': ['twixoff', 'kanal-twixoff', 'telekanal-twix-off'],
+    'ii-live': ['iilive', 'ii', 'ii-tv']
+  };
+  const aliases = slugAliases[normalizedSlug] || [];
+  const compactSlug = normalizedSlug.replace(/-/g, '');
   const channel = allowed.find(c => {
     const titleSlug = slugify(c.title || '');
+    const compactTitleSlug = normalizeSlug(titleSlug).replace(/-/g, '');
+    const compactId = normalizeSlug(c.id || '').replace(/-/g, '');
     return c.id === request.channelId
       || slugsMatch(titleSlug, normalizedSlug)
-      || slugsMatch(c.id || '', normalizedSlug);
+      || slugsMatch(c.id || '', normalizedSlug)
+      || aliases.some(alias => slugsMatch(titleSlug, alias) || slugsMatch(c.id || '', alias))
+      || (compactSlug && (compactTitleSlug.includes(compactSlug) || compactId.includes(compactSlug)));
   });
 
   if (!channel) {
