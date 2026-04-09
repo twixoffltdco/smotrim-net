@@ -8,14 +8,14 @@
   <meta name="keywords" content="смотреть тв онлайн, телевидение онлайн бесплатно, прямой эфир, российское тв онлайн, smotrim, стримлайв">
   <meta name="robots" content="index, follow">
   <meta name="author" content="Smotrim.net">
-  <link rel="canonical" href="https://smotrim.net/">
+  <link rel="canonical" id="canonical-link" href="/">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://smotrim.net/">
+  <meta property="og:url" id="og-url" content="/">
   <meta property="og:title" content="Smotrim.net — Смотреть ТВ онлайн бесплатно">
   <meta property="og:description" content="Прямые эфиры более 50 российских и зарубежных телеканалов бесплатно и без регистрации.">
-  <meta property="og:image" content="https://smotrim.net/og-image.jpg">
+  <meta property="og:image" content="/og-image.jpg">
   <meta property="og:locale" content="ru_RU">
 
   <!-- Twitter Card -->
@@ -24,7 +24,7 @@
   <meta name="twitter:description" content="Прямые эфиры телеканалов бесплатно">
 
   <!-- Schema.org -->
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="schema-json">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -37,6 +37,27 @@
       "query-input": "required name=search_term_string"
     }
   }
+  </script>
+  <script>
+    (function applyDynamicSeoHost() {
+      const origin = window.location.origin;
+      const canonical = document.getElementById('canonical-link');
+      if (canonical) canonical.href = `${origin}/`;
+      const ogUrl = document.getElementById('og-url');
+      if (ogUrl) ogUrl.content = `${origin}/`;
+      const schemaEl = document.getElementById('schema-json');
+      if (!schemaEl) return;
+      try {
+        const schema = JSON.parse(schemaEl.textContent);
+        schema.url = `${origin}/`;
+        if (schema.potentialAction) {
+          schema.potentialAction.target = `${origin}/search?q={search_term_string}`;
+        }
+        schemaEl.textContent = JSON.stringify(schema);
+      } catch (e) {
+        console.warn('Schema JSON parse error', e);
+      }
+    })();
   </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,10 +77,10 @@
     </a>
 
     <nav class="main-nav" id="main-nav">
-    <a href="#all" class="nav-link active" data-filter="all">Все каналы</a>
-      <a href="#tv" class="nav-link" data-filter="tv">📺 ТВ</a>
-      <a href="#radio" class="nav-link" data-filter="radio">📻 Радио</a>
-      <a href="#iptv" class="nav-link" data-filter="iptv">🌐 IPTV</a>
+    <a href="/" class="nav-link active" data-filter="all">Все каналы</a>
+      <a href="/tv" class="nav-link" data-filter="tv">📺 ТВ</a>
+      <a href="/radio" class="nav-link" data-filter="radio">📻 Радио</a>
+      <a href="/iptv" class="nav-link" data-filter="iptv">🌐 IPTV</a>
     </nav>
 
     <div class="header-right">
@@ -218,9 +239,9 @@
       <div class="footer-links">
         <h4>Разделы</h4>
         <a href="/">Все каналы</a>
-        <a href="#tv">ТВ каналы</a>
-        <a href="#radio">Радио</a>
-        <a href="#iptv">IPTV</a>
+        <a href="/tv">ТВ каналы</a>
+        <a href="/radio">Радио</a>
+        <a href="/iptv">IPTV</a>
       </div>
       <div class="footer-links">
         <h4>Информация</h4>

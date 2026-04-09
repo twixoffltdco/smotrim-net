@@ -2,36 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>https://smotrim.net/</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://smotrim.tatnet.app/</loc>
+    <lastmod>2026-04-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-
   <url>
-    <loc>https://smotrim.net/about.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://smotrim.tatnet.app/about.html</loc>
+    <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
-
   <url>
-    <loc>https://smotrim.net/contacts.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://smotrim.tatnet.app/contacts.html</loc>
+    <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
-
   <url>
-    <loc>https://smotrim.net/terms.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://smotrim.tatnet.app/terms.html</loc>
+    <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
-
   <url>
-    <loc>https://smotrim.net/privacy.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <loc>https://smotrim.tatnet.app/privacy.html</loc>
+    <lastmod>2026-04-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
