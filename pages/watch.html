@@ -213,23 +213,38 @@ function slugify(str) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+
+function normalizeSlug(value) {
+  return decodeURIComponent((value || '').toString().trim().toLowerCase())
+    .replace(/[^a-z0-9а-яё]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function slugsMatch(a, b) {
+  const na = normalizeSlug(a);
+  const nb = normalizeSlug(b);
+  if (!na || !nb) return false;
+  return na === nb || na.replace(/-/g, '') === nb.replace(/-/g, '');
+}
+
 function getRequestedChannel() {
   const params = new URLSearchParams(window.location.search);
   const channelId = params.get('channel_id') || '';
   const slugFromQuery = (params.get('channel') || '').trim().toLowerCase();
 
   if (channelId || slugFromQuery) {
-    return { channelId, slug: slugFromQuery };
+    return { channelId, slug: normalizeSlug(slugFromQuery) };
   }
 
   const hash = window.location.hash.replace(/^#/, '').trim();
   if (hash.startsWith('watch/')) {
-    return { channelId: '', slug: hash.replace('watch/', '').toLowerCase() };
+    return { channelId: '', slug: normalizeSlug(hash.replace('watch/', '')) };
   }
 
   const path = window.location.pathname;
   if (path.startsWith('/watch/')) {
-    return { channelId: '', slug: path.replace('/watch/', '').replace(/^\/+/, '').toLowerCase() };
+    return { channelId: '', slug: normalizeSlug(path.replace('/watch/', '').replace(/^\/+/, '')) };
   }
 
   return { channelId: '', slug: '' };
@@ -249,7 +264,13 @@ async function loadChannel() {
   }
 
   const allowed = channels.filter(c => CONFIG.allowedOwners.some(o => o.toLowerCase() === (c.owner?.username||'').toLowerCase()));
-  const channel = allowed.find(c => c.id === request.channelId || slugify(c.title) === request.slug || c.id === request.slug);
+  const normalizedSlug = normalizeSlug(request.slug);
+  const channel = allowed.find(c => {
+    const titleSlug = slugify(c.title || '');
+    return c.id === request.channelId
+      || slugsMatch(titleSlug, normalizedSlug)
+      || slugsMatch(c.id || '', normalizedSlug);
+  });
 
   if (!channel) {
     document.getElementById('watch-title').textContent = 'Канал не найден';
