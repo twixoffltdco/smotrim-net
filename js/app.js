@@ -502,6 +502,21 @@ function getPagesRange(current, total) {
   return pages;
 }
 
+
+function normalizeSlug(value) {
+  return decodeURIComponent((value || '').toString().trim().toLowerCase())
+    .replace(/[^a-z0-9а-яё]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function slugsMatch(a, b) {
+  const na = normalizeSlug(a);
+  const nb = normalizeSlug(b);
+  if (!na || !nb) return false;
+  return na === nb || na.replace(/-/g, '') === nb.replace(/-/g, '');
+}
+
 function buildWatchPageUrl({ id = '', title = '' } = {}) {
   const slug = title ? slugify(title) : id;
   return `/watch/${encodeURIComponent(slug || id)}`;
@@ -629,7 +644,12 @@ function applyRouteFromLocation() {
 
 function openStreamChannelBySlug(slug) {
   if (!slug || !state.allChannels.length) return false;
-  const channel = state.allChannels.find(ch => slugify(ch.title) === slug || ch.id === slug);
+  const normalizedSlug = normalizeSlug(slug);
+  const channel = state.allChannels.find(ch => {
+    const titleSlug = slugify(ch.title || '');
+    return slugsMatch(titleSlug, normalizedSlug)
+      || slugsMatch(ch.id || '', normalizedSlug);
+  });
   if (!channel) return false;
   openChannel(
     channel.id,
@@ -701,9 +721,9 @@ function handleRoute() {
   }
 
   if (path.startsWith('/watch/') || cleanHash.startsWith('watch/')) {
-    const slug = path.startsWith('/watch/')
+    const slug = normalizeSlug(path.startsWith('/watch/')
       ? path.replace(/^\/watch\//, '').trim()
-      : cleanHash.replace(/^watch\//, '').trim();
+      : cleanHash.replace(/^watch\//, '').trim());
     state.activeType = 'all';
     state.activeSource = 'all';
     setActiveNav(navByFilter.all);
@@ -717,9 +737,9 @@ function handleRoute() {
   }
 
   if (path.startsWith('/iptv/') || cleanHash.startsWith('iptv/')) {
-    const slug = path.startsWith('/iptv/')
+    const slug = normalizeSlug(path.startsWith('/iptv/')
       ? path.replace(/^\/iptv\//, '').trim()
-      : cleanHash.replace(/^iptv\//, '').trim();
+      : cleanHash.replace(/^iptv\//, '').trim());
     state.activeType = 'all';
     state.activeSource = 'iptv';
     setActiveNav(navByFilter.iptv);
