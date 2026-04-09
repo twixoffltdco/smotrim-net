@@ -195,18 +195,28 @@ function setupFilterTabs() {
 }
 
 function setupQuickPicker() {
-  const categorySelect = $('#category-select');
-  const channelSelect = $('#channel-select');
+  const categoriesWrap = $('#category-select');
+  const channelsWrap = $('#channel-select');
   const openBtn = $('#open-selected-channel');
-  if (!categorySelect || !channelSelect || !openBtn) return;
+  if (!categoriesWrap || !channelsWrap || !openBtn) return;
 
-  categorySelect.addEventListener('change', () => {
-    state.selectedCategory = categorySelect.value;
+  categoriesWrap.addEventListener('click', (event) => {
+    const btn = event.target.closest('.quick-chip');
+    if (!btn) return;
+    const selectedCategory = btn.dataset.category || 'all';
+    if (selectedCategory === state.selectedCategory) return;
+    state.selectedCategory = selectedCategory;
+    renderQuickPickerCategories();
     renderQuickPickerChannels();
   });
-  channelSelect.addEventListener('change', () => {
-    state.selectedChannelKey = channelSelect.value;
+
+  channelsWrap.addEventListener('click', (event) => {
+    const btn = event.target.closest('.quick-channel-btn');
+    if (!btn) return;
+    state.selectedChannelKey = btn.dataset.channelKey || '';
+    renderQuickPickerChannels();
   });
+
   openBtn.addEventListener('click', () => {
     const channel = getAllSelectableChannels().find(ch => ch.key === state.selectedChannelKey);
     if (channel) openAnyChannel(channel);
@@ -214,24 +224,45 @@ function setupQuickPicker() {
 }
 
 function refreshQuickPicker() {
-  const categorySelect = $('#category-select');
-  if (!categorySelect) return;
-  const channels = getAllSelectableChannels();
-  const categories = ['all', ...Array.from(new Set(channels.map(ch => ch.category)))];
-  categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat === 'all' ? 'Все категории' : cat}</option>`).join('');
-  categorySelect.value = categories.includes(state.selectedCategory) ? state.selectedCategory : 'all';
+  const categoriesWrap = $('#category-select');
+  if (!categoriesWrap) return;
+  renderQuickPickerCategories();
   renderQuickPickerChannels();
 }
 
+function renderQuickPickerCategories() {
+  const categoriesWrap = $('#category-select');
+  if (!categoriesWrap) return;
+
+  const channels = getAllSelectableChannels();
+  const categories = ['all', ...Array.from(new Set(channels.map(ch => ch.category).filter(Boolean)))];
+  if (!categories.includes(state.selectedCategory)) state.selectedCategory = 'all';
+
+  categoriesWrap.innerHTML = categories.map(cat => {
+    const title = cat === 'all' ? 'Все' : escapeAttr(cat);
+    const active = state.selectedCategory === cat ? ' active' : '';
+    return `<button type="button" class="quick-chip${active}" data-category="${escapeAttr(cat)}">${title}</button>`;
+  }).join('');
+}
+
 function renderQuickPickerChannels() {
-  const channelSelect = $('#channel-select');
-  if (!channelSelect) return;
+  const channelsWrap = $('#channel-select');
+  if (!channelsWrap) return;
+
   const channels = getAllSelectableChannels().filter(ch => state.selectedCategory === 'all' || ch.category === state.selectedCategory);
-  channelSelect.innerHTML = channels.map(ch => `<option value="${ch.key}">${escapeAttr(ch.title)}</option>`).join('');
-  if (!channels.length) return;
+  if (!channels.length) {
+    channelsWrap.innerHTML = '<span class="quick-channel-empty">Нет каналов</span>';
+    state.selectedChannelKey = '';
+    return;
+  }
+
   const hasCurrent = channels.some(ch => ch.key === state.selectedChannelKey);
   state.selectedChannelKey = hasCurrent ? state.selectedChannelKey : channels[0].key;
-  channelSelect.value = state.selectedChannelKey;
+
+  channelsWrap.innerHTML = channels.map(ch => {
+    const active = state.selectedChannelKey === ch.key ? ' active' : '';
+    return `<button type="button" class="quick-channel-btn${active}" data-channel-key="${escapeAttr(ch.key)}">${escapeAttr(ch.title)}</button>`;
+  }).join('');
 }
 
 // =============================================
