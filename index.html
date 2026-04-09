@@ -84,6 +84,7 @@
     </nav>
 
     <div class="header-right">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">🌙</button>
       <div class="search-wrap">
         <input type="search" id="search-input" class="search-input" placeholder="Поиск канала..." autocomplete="off">
         <button class="search-btn" aria-label="Поиск">
@@ -96,6 +97,19 @@
     </div>
   </div>
 </header>
+
+<!-- QUICK CHANNEL CAROUSEL -->
+<section class="quick-picker-section">
+  <div class="container">
+    <div class="quick-picker">
+      <label for="category-select">Категория</label>
+      <select id="category-select" class="quick-select"></select>
+      <label for="channel-select">Канал</label>
+      <select id="channel-select" class="quick-select"></select>
+      <button id="open-selected-channel" class="quick-open-btn" type="button">Открыть канал</button>
+    </div>
+  </div>
+</section>
 
 <!-- HERO BANNER -->
 <section class="hero" id="hero">
@@ -175,6 +189,7 @@
       <div class="player-info" id="player-info">
         <p class="player-desc" id="player-desc"></p>
         <div class="player-meta" id="player-meta"></div>
+        <button class="player-fav-btn" id="player-fav-btn" type="button">☆ В избранное</button>
         <a class="player-fullpage-btn" id="player-fullpage-btn" href="#" target="_blank">
           ⛶ Открыть на полный экран
         </a>
@@ -264,6 +279,14 @@
     </div>
   </div>
 </footer>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Мобильная навигация">
+  <a href="/" class="mobile-nav-link active" data-filter="all">🏠<span>Все</span></a>
+  <a href="/tv" class="mobile-nav-link" data-filter="tv">📺<span>ТВ</span></a>
+  <a href="/radio" class="mobile-nav-link" data-filter="radio">📻<span>Радио</span></a>
+  <a href="/iptv" class="mobile-nav-link" data-filter="iptv">🌐<span>IPTV</span></a>
+  <button class="mobile-nav-link" id="mobile-open-favorites" type="button">⭐<span>Избранное</span></button>
+</nav>
 
 <script src="/js/app.js"></script>
 </body>

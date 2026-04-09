@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://smotrim.tatnet.app/sitemap-main.xml</loc>
+    <loc>https://smotrim.net/sitemap-main.xml</loc>
     <lastmod>2026-04-09</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://smotrim.tatnet.app/sitemap-channels.xml</loc>
+    <loc>https://smotrim.net/sitemap-channels.xml</loc>
     <lastmod>2026-04-09</lastmod>
   </sitemap>
   <sitemap>
-    <loc>https://smotrim.tatnet.app/sitemap-iptv.xml</loc>
+    <loc>https://smotrim.net/sitemap-iptv.xml</loc>
     <lastmod>2026-04-09</lastmod>
   </sitemap>
 </sitemapindex>

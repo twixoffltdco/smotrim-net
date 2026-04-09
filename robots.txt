@@ -21,4 +21,4 @@ User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
-Sitemap: https://smotrim.tatnet.app/sitemap.xml
+Sitemap: https://smotrim.net/sitemap.xml
