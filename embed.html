@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smotrim.net Embed Player</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    html, body { height: 100%; }
+    body { margin: 0; }
+    .embed-shell { min-height: 100%; display: flex; flex-direction: column; background: var(--bg); }
+    .embed-top { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .embed-top select, .embed-top button { border: 1px solid var(--border); background: var(--bg2); color: var(--text); border-radius: 8px; padding: 8px; }
+    .embed-player { flex: 1; position: relative; }
+    .embed-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <div class="embed-shell">
+    <div class="embed-top">
+      <select id="embed-channel"></select>
+      <button id="embed-favorite">☆</button>
+      <button id="embed-theme">🌙</button>
+    </div>
+    <div class="embed-player" id="embed-player"></div>
+  </div>
+
+<script>
+const CONFIG = {
+  api: 'https://aqeleulwobgamdffkfri.supabase.co/functions/v1/public-channels',
+  allowedOwners: ['oinktech', 'Twixoff', 'ТВКАНАЛЫ']
+};
+const state = { channels: [], active: null, profile: { favorites: {}, theme: 'dark' } };
+const qs = s => document.querySelector(s);
+
+function saveProfile() { localStorage.setItem('smotrim_profile_v1', JSON.stringify(state.profile)); }
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem('smotrim_profile_v1');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    state.profile.favorites = p.favorites || {};
+    state.profile.theme = p.theme || 'dark';
+  } catch(_) {}
+}
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  qs('#embed-theme').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function slugify(s='') { return s.toLowerCase().replace(/[^a-z0-9а-яё]+/gi,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,''); }
+
+function renderPlayer() {
+  if (!state.active) return;
+  qs('#embed-player').innerHTML = `<iframe src="https://stlivetv.tatnet.app/embed/${encodeURIComponent(state.active.id)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
+  const key = `stream:${state.active.id}`;
+  qs('#embed-favorite').textContent = state.profile.favorites[key] ? '★' : '☆';
+}
+
+function setChannel(id) {
+  const selected = state.channels.find(c => c.id === id);
+  if (!selected) return;
+  state.active = selected;
+  localStorage.setItem('smotrim_embed_last_channel', id);
+  renderPlayer();
+}
+
+async function loadChannels() {
+  let list = [];
+  let page = 1;
+  while (page <= 8) {
+    const res = await fetch(`${CONFIG.api}?page=${page}&limit=80`);
+    const json = await res.json();
+    list = list.concat(json.data || []);
+    if (page >= (json.pagination?.total_pages || 1)) break;
+    page++;
+  }
+  state.channels = list.filter(c => CONFIG.allowedOwners.some(o => o.toLowerCase() === (c.owner?.username||'').toLowerCase()));
+  const select = qs('#embed-channel');
+  select.innerHTML = state.channels.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  const requested = new URLSearchParams(window.location.search).get('channel') || localStorage.getItem('smotrim_embed_last_channel') || state.channels[0]?.id;
+  if (requested) {
+    select.value = requested;
+    setChannel(requested);
+  }
+  select.addEventListener('change', () => setChannel(select.value));
+}
+
+qs('#embed-favorite').addEventListener('click', () => {
+  if (!state.active) return;
+  const key = `stream:${state.active.id}`;
+  if (state.profile.favorites[key]) delete state.profile.favorites[key];
+  else state.profile.favorites[key] = { title: state.active.title, type: 'stream' };
+  saveProfile();
+  renderPlayer();
+});
+
+qs('#embed-theme').addEventListener('click', () => {
+  state.profile.theme = state.profile.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(state.profile.theme);
+  saveProfile();
+});
+
+(async function init() {
+  loadProfile();
+  applyTheme(state.profile.theme);
+  await loadChannels();
+})();
+</script>
+</body>
+</html>

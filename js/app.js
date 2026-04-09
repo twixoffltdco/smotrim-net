@@ -34,6 +34,14 @@ const state = {
   isLoading: false,
   pendingHashRoute: null,
   activePlayerSource: 'streamlivetv',
+  selectedCategory: 'all',
+  selectedChannelKey: '',
+  profile: {
+    liked: {},
+    favorites: {},
+    lastOpened: null
+  },
+  restoredOnce: false
 };
 
 // =============================================
@@ -46,9 +54,13 @@ const $$ = (s, c = document) => c.querySelectorAll(s);
 // INIT
 // =============================================
 document.addEventListener('DOMContentLoaded', () => {
+  loadProfile();
   setupNav();
   setupSearch();
   setupBurger();
+  setupThemeToggle();
+  setupQuickPicker();
+  setupMobileNav();
   setupPlayerClose();
   setupPlayerSourceSwitcher();
   setupFilterTabs();
@@ -84,9 +96,35 @@ function setupNav() {
         renderChannels();
         history.replaceState({}, '', filter === 'all' ? '/' : `/${filter}`);
         document.getElementById('all-channels').scrollIntoView({ behavior: 'smooth' });
+        syncMobileNav(filter);
       }
     });
   });
+}
+
+function setupMobileNav() {
+  $$('.mobile-nav-link[data-filter]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const filter = link.dataset.filter || 'all';
+      const navLink = $(`.nav-link[data-filter="${filter}"]`);
+      if (navLink) navLink.click();
+    });
+  });
+  const favBtn = $('#mobile-open-favorites');
+  if (favBtn) {
+    favBtn.addEventListener('click', () => {
+      state.searchQuery = '';
+      const favoriteIds = Object.keys(state.profile.favorites);
+      if (!favoriteIds.length) return alert('Пока нет избранных каналов.');
+      const channel = getAllSelectableChannels().find(ch => favoriteIds.includes(ch.key));
+      if (channel) openAnyChannel(channel);
+    });
+  }
+}
+
+function syncMobileNav(filter) {
+  $$('.mobile-nav-link[data-filter]').forEach(item => item.classList.toggle('active', item.dataset.filter === filter));
 }
 
 // =============================================
@@ -106,6 +144,25 @@ function setupSearch() {
       renderIptvChannels();
     }, 300);
   });
+}
+
+function setupThemeToggle() {
+  const btn = $('#theme-toggle');
+  if (!btn) return;
+  applyTheme(state.profile.theme || 'light');
+  btn.addEventListener('click', () => {
+    const current = document.body.dataset.theme === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    state.profile.theme = next;
+    saveProfile();
+  });
+}
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  const btn = $('#theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 
 // =============================================
@@ -135,6 +192,46 @@ function setupFilterTabs() {
       }
     });
   });
+}
+
+function setupQuickPicker() {
+  const categorySelect = $('#category-select');
+  const channelSelect = $('#channel-select');
+  const openBtn = $('#open-selected-channel');
+  if (!categorySelect || !channelSelect || !openBtn) return;
+
+  categorySelect.addEventListener('change', () => {
+    state.selectedCategory = categorySelect.value;
+    renderQuickPickerChannels();
+  });
+  channelSelect.addEventListener('change', () => {
+    state.selectedChannelKey = channelSelect.value;
+  });
+  openBtn.addEventListener('click', () => {
+    const channel = getAllSelectableChannels().find(ch => ch.key === state.selectedChannelKey);
+    if (channel) openAnyChannel(channel);
+  });
+}
+
+function refreshQuickPicker() {
+  const categorySelect = $('#category-select');
+  if (!categorySelect) return;
+  const channels = getAllSelectableChannels();
+  const categories = ['all', ...Array.from(new Set(channels.map(ch => ch.category)))];
+  categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat === 'all' ? 'Все категории' : cat}</option>`).join('');
+  categorySelect.value = categories.includes(state.selectedCategory) ? state.selectedCategory : 'all';
+  renderQuickPickerChannels();
+}
+
+function renderQuickPickerChannels() {
+  const channelSelect = $('#channel-select');
+  if (!channelSelect) return;
+  const channels = getAllSelectableChannels().filter(ch => state.selectedCategory === 'all' || ch.category === state.selectedCategory);
+  channelSelect.innerHTML = channels.map(ch => `<option value="${ch.key}">${escapeAttr(ch.title)}</option>`).join('');
+  if (!channels.length) return;
+  const hasCurrent = channels.some(ch => ch.key === state.selectedChannelKey);
+  state.selectedChannelKey = hasCurrent ? state.selectedChannelKey : channels[0].key;
+  channelSelect.value = state.selectedChannelKey;
 }
 
 // =============================================
@@ -172,6 +269,8 @@ async function loadChannels(silent = false) {
     updateStats();
     renderFeatured();
     renderChannels();
+    refreshQuickPicker();
+    tryRestoreLastOpened();
     tryApplyPendingHashRoute();
     showLoading(false);
 
@@ -232,6 +331,7 @@ async function loadIptvChannels(silent = false) {
   if (!silent && loadingEl) loadingEl.classList.add('hidden');
   updateStats();
   renderIptvChannels();
+  refreshQuickPicker();
   tryApplyPendingHashRoute();
 }
 
@@ -404,6 +504,8 @@ function buildChannelCard(ch, source) {
   const typeLabel = isRadio ? 'radio' : 'tv';
   const typeClass = isRadio ? 'ch-type-radio' : 'ch-type-tv';
   const typeText = isRadio ? '📻 Радио' : '📺 ТВ';
+  const favKey = `stream:${ch.id}`;
+  const isFav = Boolean(state.profile.favorites[favKey]);
 
   return `
     <article class="channel-card" 
@@ -419,6 +521,7 @@ function buildChannelCard(ch, source) {
         }
         <span class="ch-live-badge"><span class="live-dot"></span>LIVE</span>
         <span class="ch-type-badge ${typeClass}">${typeText}</span>
+        <button class="fav-btn ${isFav ? 'active' : ''}" type="button" onclick="event.stopPropagation();toggleFavorite('${favKey}', {title:'${escapeAttr(ch.title)}', type:'stream'})" aria-label="Добавить в избранное">${isFav ? '★' : '☆'}</button>
       </div>
       <div class="channel-info">
         <h3 class="channel-name" itemprop="broadcastDisplayName">${ch.title}</h3>
@@ -438,6 +541,8 @@ function buildIptvCard(ch) {
   const country = ch.country || '';
   const url = ch.url || '';
   const categories = Array.isArray(ch.categories) ? ch.categories.slice(0, 2).join(', ') : '';
+  const favKey = `iptv:${slugify(name)}`;
+  const isFav = Boolean(state.profile.favorites[favKey]);
 
   return `
     <article class="channel-card"
@@ -451,6 +556,7 @@ function buildIptvCard(ch) {
           : '🌐'
         }
         <span class="ch-type-badge ch-type-iptv">🌐 IPTV</span>
+        <button class="fav-btn ${isFav ? 'active' : ''}" type="button" onclick="event.stopPropagation();toggleFavorite('${favKey}', {title:'${escapeAttr(name)}', type:'iptv'})" aria-label="Добавить в избранное">${isFav ? '★' : '☆'}</button>
         ${country ? `<span style="position:absolute;bottom:6px;right:6px;font-size:0.65rem;background:rgba(0,0,0,0.6);padding:2px 5px;border-radius:3px;color:#fff;">${country}</span>` : ''}
       </div>
       <div class="channel-info">
@@ -553,6 +659,8 @@ function openChannel(id, title, desc, type, owner) {
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  state.profile.lastOpened = { key: `stream:${id}` };
+  saveProfile();
 
   // Update URL for SEO
   const slug = slugify(title);
@@ -562,6 +670,7 @@ function openChannel(id, title, desc, type, owner) {
   // Update meta for SEO
   updateMeta(`${title} — смотреть онлайн | Smotrim.net`,
     `Смотрите ${title} онлайн бесплатно на Smotrim.net. Прямой эфир без регистрации.`);
+  syncPlayerFavoriteButton();
 }
 
 // =============================================
@@ -592,12 +701,15 @@ function openIptvChannel(name, url, logo) {
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  state.profile.lastOpened = { key: `iptv:${slugify(name)}` };
+  saveProfile();
 
   const slug = slugify(name);
   history.replaceState({ iptv: true, name }, name, `/iptv/${slug}`);
   document.title = `${name} — IPTV онлайн | Smotrim.net`;
   updateMeta(`${name} — смотреть IPTV онлайн | Smotrim.net`,
     `Смотрите ${name} онлайн бесплатно. Международное телевидение IPTV на Smotrim.net.`);
+  syncPlayerFavoriteButton();
 }
 
 // =============================================
@@ -839,6 +951,8 @@ function setActiveNav(selector) {
   $$('.nav-link').forEach(l => l.classList.remove('active'));
   const target = $(selector);
   if (target) target.classList.add('active');
+  const filter = target?.dataset?.filter || 'all';
+  syncMobileNav(filter);
 }
 
 // =============================================
@@ -852,6 +966,113 @@ function updateMeta(title, desc) {
   if (ogTitle) ogTitle.content = title;
   const ogDesc = $('meta[property="og:description"]');
   if (ogDesc) ogDesc.content = desc;
+}
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem('smotrim_profile_v1');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    state.profile = {
+      liked: data.liked || {},
+      favorites: data.favorites || {},
+      lastOpened: data.lastOpened || null,
+      theme: data.theme || 'light'
+    };
+  } catch (e) {
+    console.warn('profile load error', e);
+  }
+}
+
+function saveProfile() {
+  localStorage.setItem('smotrim_profile_v1', JSON.stringify(state.profile));
+}
+
+function getAllSelectableChannels() {
+  const stream = state.allChannels.map(ch => ({
+    key: `stream:${ch.id}`,
+    id: ch.id,
+    title: ch.title,
+    type: 'stream',
+    category: resolveCategory(ch.title, ch.channel_type),
+    payload: ch
+  }));
+  const iptv = state.iptvChannels.slice(0, 2000).map(ch => ({
+    key: `iptv:${ch.channel || slugify(ch.channel_name || '')}`,
+    title: ch.channel_name || ch.channel || 'IPTV',
+    type: 'iptv',
+    category: resolveCategory(ch.channel_name || ch.channel || '', 'iptv'),
+    payload: ch
+  }));
+  return [...stream, ...iptv];
+}
+
+function resolveCategory(title, type) {
+  const t = (title || '').toLowerCase();
+  if (type === 'radio') return 'Радио';
+  if (t.includes('спорт')) return 'Спорт';
+  if (t.includes('новост') || t.includes('news')) return 'Новости';
+  if (t.includes('кино') || t.includes('film') || t.includes('movie')) return 'Кино';
+  if (t.includes('дет') || t.includes('kids') || t.includes('мульт')) return 'Детские';
+  if (type === 'iptv') return 'IPTV';
+  return 'Общие';
+}
+
+function openAnyChannel(ch) {
+  if (ch.type === 'iptv') {
+    openIptvChannel(ch.payload.channel_name || ch.payload.channel || '', ch.payload.url || '', ch.payload.logo || '');
+    return;
+  }
+  openChannel(
+    ch.payload.id,
+    ch.payload.title,
+    ch.payload.description || '',
+    ch.payload.channel_type || 'tv',
+    ch.payload.owner?.username || ''
+  );
+}
+
+function tryRestoreLastOpened() {
+  if (state.restoredOnce) return;
+  const path = window.location.pathname.toLowerCase();
+  if (path !== '/') return;
+  const saved = state.profile.lastOpened;
+  if (!saved) return;
+  const channel = getAllSelectableChannels().find(ch => ch.key === saved.key);
+  if (!channel) return;
+  state.restoredOnce = true;
+  openAnyChannel(channel);
+}
+
+function toggleFavorite(key, payload = {}) {
+  if (!key) return;
+  if (state.profile.favorites[key]) {
+    delete state.profile.favorites[key];
+  } else {
+    state.profile.favorites[key] = {
+      title: payload.title || '',
+      type: payload.type || '',
+      savedAt: Date.now()
+    };
+  }
+  saveProfile();
+  renderChannels();
+  renderIptvChannels();
+  syncPlayerFavoriteButton();
+}
+
+function syncPlayerFavoriteButton() {
+  const btn = $('#player-fav-btn');
+  if (!btn) return;
+  const active = history.state || {};
+  const key = active.channelId ? `stream:${active.channelId}` : (active.iptv ? `iptv:${slugify(active.name || '')}` : '');
+  const selected = Boolean(key && state.profile.favorites[key]);
+  btn.classList.toggle('active', selected);
+  btn.textContent = selected ? '★ В избранном' : '☆ В избранное';
+  btn.onclick = () => {
+    if (!key) return;
+    toggleFavorite(key, { title: active.title || active.name || '', type: active.iptv ? 'iptv' : 'stream' });
+  };
 }
 
 // =============================================
