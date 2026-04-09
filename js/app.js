@@ -499,6 +499,13 @@ function getPagesRange(current, total) {
   return pages;
 }
 
+function buildWatchPageUrl({ id = '', title = '' } = {}) {
+  const params = new URLSearchParams();
+  if (id) params.set('channel_id', id);
+  if (title) params.set('channel', slugify(title));
+  return `/pages/watch.html?${params.toString()}`;
+}
+
 // =============================================
 // PLAYER — StreamLiveTV
 // =============================================
@@ -513,7 +520,7 @@ function openChannel(id, title, desc, type, owner) {
   if (!overlay || !iframe) return;
 
   const embedUrl = `${CONFIG.embedBase}${id}`;
-  const watchUrl = `https://stlivetv.tatnet.app/watch/${id}`;
+  const watchUrl = buildWatchPageUrl({ id, title });
 
   iframe.src = embedUrl;
   if (titleEl) titleEl.textContent = title;

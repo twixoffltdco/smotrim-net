@@ -8,19 +8,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#0a0c10; --text:#f0f2f8; --text2:#9aa3b8; --accent:#e63946; --surface:#1a1e28; }
+    :root { --bg:#f4f6fb; --text:#101828; --text2:#475467; --accent:#0f69ff; --surface:#ffffff; --border:#d0d5dd; }
     * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; }
-    .num { font-family:'Montserrat',sans-serif; font-size:8rem; font-weight:800; color:var(--accent); line-height:1; }
-    h1 { font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:700; margin:16px 0 8px; }
-    p { color:var(--text2); margin-bottom:32px; }
-    a { display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:var(--accent); color:#fff; text-decoration:none; border-radius:10px; font-weight:600; }
+    .num { font-family:'Montserrat',sans-serif; font-size:7rem; font-weight:800; color:var(--accent); line-height:1; }
+    h1 { font-family:'Montserrat',sans-serif; font-size:1.45rem; font-weight:700; margin:16px 0 8px; }
+    p { color:var(--text2); margin-bottom:28px; max-width:540px; }
+    a { display:inline-flex; align-items:center; gap:8px; padding:12px 26px; background:var(--accent); color:#fff; text-decoration:none; border-radius:10px; font-weight:600; }
   </style>
 </head>
 <body>
   <div class="num">404</div>
   <h1>Страница не найдена</h1>
-  <p>Такого канала или страницы нет. Вернитесь на главную.</p>
+  <p id="error-text">Такого канала или страницы нет. Вернитесь на главную.</p>
   <a href="/">▶ На главную</a>
+
+  <script>
+    (function redirectWatchRoutes() {
+      const path = window.location.pathname;
+      if (!path.startsWith('/watch/')) return;
+
+      const slug = path.replace('/watch/', '').replace(/^\/+|\/+$/g, '');
+      if (!slug) return;
+
+      const redirectUrl = `/pages/watch.html?channel=${encodeURIComponent(slug)}`;
+      document.getElementById('error-text').textContent = 'Пробуем открыть канал по резервному адресу…';
+      window.location.replace(redirectUrl);
+    })();
+  </script>
 </body>
 </html>

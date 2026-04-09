@@ -52,8 +52,8 @@
     .watch-main {}
     .watch-sidebar {}
     .watch-player-wrap {
-      background: #000;
-      border-radius: 12px;
+      background: #d6deeb;
+      border-radius: 14px;
       overflow: hidden;
       position: relative;
       padding-bottom: 56.25%;
@@ -68,7 +68,7 @@
       margin-top: 16px;
       padding: 20px;
       background: var(--surface);
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid var(--border);
     }
     .watch-title {
@@ -159,7 +159,7 @@
   <nav aria-label="Хлебные крошки" style="padding:16px 0;font-size:0.8rem;color:var(--text3);">
     <a href="/" style="color:var(--text3);text-decoration:none;">Главная</a>
     <span style="margin:0 6px;">›</span>
-    <a href="/tv" style="color:var(--text3);text-decoration:none;">Телеканалы</a>
+    <a href="/" style="color:var(--text3);text-decoration:none;">Телеканалы</a>
     <span style="margin:0 6px;">›</span>
     <span id="breadcrumb-name" style="color:var(--text);">Загрузка...</span>
   </nav>
@@ -167,7 +167,7 @@
   <div class="watch-layout">
     <div class="watch-main">
       <div class="watch-player-wrap" id="watch-player">
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#111;">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#eff3fa;">
           <div class="spinner"></div>
         </div>
       </div>
@@ -213,9 +213,30 @@ function slugify(str) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-async function loadChannel() {
+function getRequestedChannel() {
+  const params = new URLSearchParams(window.location.search);
+  const channelId = params.get('channel_id') || '';
+  const slugFromQuery = (params.get('channel') || '').trim().toLowerCase();
+
+  if (channelId || slugFromQuery) {
+    return { channelId, slug: slugFromQuery };
+  }
+
+  const hash = window.location.hash.replace(/^#/, '').trim();
+  if (hash.startsWith('watch/')) {
+    return { channelId: '', slug: hash.replace('watch/', '').toLowerCase() };
+  }
+
   const path = window.location.pathname;
-  const slug = path.replace('/watch/', '').replace(/^\/+/, '');
+  if (path.startsWith('/watch/')) {
+    return { channelId: '', slug: path.replace('/watch/', '').replace(/^\/+/, '').toLowerCase() };
+  }
+
+  return { channelId: '', slug: '' };
+}
+
+async function loadChannel() {
+  const request = getRequestedChannel();
 
   let channels = [];
   let page = 1, totalPages = 1;
@@ -228,7 +249,7 @@ async function loadChannel() {
   }
 
   const allowed = channels.filter(c => CONFIG.allowedOwners.some(o => o.toLowerCase() === (c.owner?.username||'').toLowerCase()));
-  const channel = allowed.find(c => slugify(c.title) === slug || c.id === slug);
+  const channel = allowed.find(c => c.id === request.channelId || slugify(c.title) === request.slug || c.id === request.slug);
 
   if (!channel) {
     document.getElementById('watch-title').textContent = 'Канал не найден';
@@ -246,8 +267,9 @@ async function loadChannel() {
   document.getElementById('og-desc').content = desc;
   document.getElementById('tw-title').content = title;
   document.getElementById('tw-desc').content = desc;
-  document.getElementById('canonical-link').href = `https://smotrim.net/watch/${slugify(channel.title)}`;
-  document.getElementById('og-url').content = `https://smotrim.net/watch/${slugify(channel.title)}`;
+  const watchPath = `https://smotrim.net/pages/watch.html?channel_id=${encodeURIComponent(channel.id)}&channel=${encodeURIComponent(slugify(channel.title))}`;
+  document.getElementById('canonical-link').href = watchPath;
+  document.getElementById('og-url').content = watchPath;
   if (channel.thumbnail_url) document.getElementById('og-image').content = channel.thumbnail_url;
   document.getElementById('breadcrumb-name').textContent = channel.title;
   document.getElementById('watch-title').textContent = channel.title;
@@ -265,7 +287,7 @@ async function loadChannel() {
     "name": channel.title,
     "description": channel.description || '',
     "isLiveBroadcast": true,
-    "url": `https://smotrim.net/watch/${slugify(channel.title)}`,
+    "url": watchPath,
     "image": channel.thumbnail_url || '',
     "broadcastOfEvent": {
       "@type": "Event",
@@ -283,7 +305,7 @@ async function loadChannel() {
   // Sidebar
   const others = allowed.filter(c => c.id !== channel.id && c.channel_type === 'tv').slice(0, 20);
   document.getElementById('sidebar-channels').innerHTML = others.map(c => `
-    <a class="sidebar-ch-item" href="/watch/${slugify(c.title)}" title="${c.title} — смотреть онлайн">
+    <a class="sidebar-ch-item" href="/pages/watch.html?channel_id=${encodeURIComponent(c.id)}&channel=${encodeURIComponent(slugify(c.title))}" title="${c.title} — смотреть онлайн">
       <div class="sidebar-ch-thumb">
         ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="${c.title}" loading="lazy">` : '📺'}
       </div>
