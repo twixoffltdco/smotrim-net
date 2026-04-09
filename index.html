@@ -99,14 +99,15 @@
 </header>
 
 <!-- QUICK CHANNEL CAROUSEL -->
-<section class="quick-picker-section">
+<section class="quick-picker-section" aria-label="Быстрый выбор канала">
   <div class="container">
     <div class="quick-picker">
-      <label for="category-select">Категория</label>
-      <select id="category-select" class="quick-select"></select>
-      <label for="channel-select">Канал</label>
-      <select id="channel-select" class="quick-select"></select>
-      <button id="open-selected-channel" class="quick-open-btn" type="button">Открыть канал</button>
+      <div class="quick-picker-head">
+        <p class="quick-title">Быстрый выбор</p>
+        <button id="open-selected-channel" class="quick-open-btn" type="button">Смотреть</button>
+      </div>
+      <div class="quick-categories" id="category-select" role="tablist" aria-label="Категории каналов"></div>
+      <div class="quick-channels" id="channel-select" aria-label="Список каналов"></div>
     </div>
   </div>
 </section>
