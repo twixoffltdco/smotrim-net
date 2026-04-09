@@ -10,19 +10,65 @@
     html, body { height: 100%; }
     body { margin: 0; }
     .embed-shell { min-height: 100%; display: flex; flex-direction: column; background: var(--bg); }
-    .embed-top { display: flex; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .embed-top select, .embed-top button { border: 1px solid var(--border); background: var(--bg2); color: var(--text); border-radius: 8px; padding: 8px; }
+    .embed-top {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      align-items: center;
+    }
+    .embed-top select, .embed-top button, .embed-top input {
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px;
+      font: inherit;
+    }
+    .embed-top select { min-width: 180px; flex: 1 1 280px; }
+    .embed-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .embed-copy-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .embed-copy-wrap input {
+      min-width: 0;
+      width: 100%;
+      font-size: 0.82rem;
+    }
+    #embed-copy-status { font-size: 0.75rem; color: var(--text2); min-height: 1.2em; padding: 0 8px 8px; }
     .embed-player { flex: 1; position: relative; }
     .embed-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    @media (max-width: 700px) {
+      .embed-top select { flex-basis: 100%; }
+      .embed-copy-wrap { grid-template-columns: 1fr; }
+      .embed-copy-wrap button { width: 100%; }
+      .embed-actions { width: 100%; }
+      .embed-actions button { flex: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="embed-shell">
     <div class="embed-top">
       <select id="embed-channel"></select>
-      <button id="embed-favorite">☆</button>
-      <button id="embed-theme">🌙</button>
+      <div class="embed-actions">
+        <button id="embed-favorite">☆</button>
+        <button id="embed-theme">🌙</button>
+      </div>
     </div>
+    <div class="embed-copy-wrap">
+      <input id="embed-link" readonly aria-label="Ссылка на embed">
+      <button id="embed-copy-link" type="button">Копировать ссылку</button>
+      <button id="embed-copy-code" type="button">Копировать iframe</button>
+    </div>
+    <div id="embed-copy-status" aria-live="polite"></div>
     <div class="embed-player" id="embed-player"></div>
   </div>
 
@@ -51,12 +97,19 @@ function applyTheme(theme) {
 }
 
 function slugify(s='') { return s.toLowerCase().replace(/[^a-z0-9а-яё]+/gi,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,''); }
+function escapeAttr(s='') { return String(s).replace(/"/g, '&quot;'); }
 
 function renderPlayer() {
   if (!state.active) return;
-  qs('#embed-player').innerHTML = `<iframe src="https://stlivetv.tatnet.app/embed/${encodeURIComponent(state.active.id)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
+  const embedUrl = getEmbedUrl(state.active.id);
+  qs('#embed-player').innerHTML = `<iframe src="${embedUrl}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
+  qs('#embed-link').value = embedUrl;
   const key = `stream:${state.active.id}`;
   qs('#embed-favorite').textContent = state.profile.favorites[key] ? '★' : '☆';
+}
+
+function getEmbedUrl(channelId) {
+  return `https://stlivetv.tatnet.app/embed/${encodeURIComponent(channelId)}`;
 }
 
 function setChannel(id) {
@@ -101,6 +154,40 @@ qs('#embed-theme').addEventListener('click', () => {
   state.profile.theme = state.profile.theme === 'dark' ? 'light' : 'dark';
   applyTheme(state.profile.theme);
   saveProfile();
+});
+
+async function copyText(text, successLabel) {
+  const status = qs('#embed-copy-status');
+  if (!text) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const helper = document.createElement('textarea');
+      helper.value = text;
+      helper.style.position = 'fixed';
+      helper.style.left = '-9999px';
+      document.body.appendChild(helper);
+      helper.focus();
+      helper.select();
+      document.execCommand('copy');
+      helper.remove();
+    }
+    status.textContent = `${successLabel} скопировано`;
+  } catch (_) {
+    status.textContent = 'Не удалось скопировать автоматически. Скопируйте вручную.';
+  }
+}
+
+qs('#embed-copy-link').addEventListener('click', () => {
+  copyText(qs('#embed-link').value, 'Ссылка');
+});
+
+qs('#embed-copy-code').addEventListener('click', () => {
+  const url = qs('#embed-link').value;
+  const title = state.active?.title || 'Smotrim.net канал';
+  const iframeCode = `<iframe src="${url}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" title="${escapeAttr(title)}"></iframe>`;
+  copyText(iframeCode, 'Iframe-код');
 });
 
 (async function init() {
